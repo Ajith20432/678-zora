@@ -1,0 +1,30 @@
+services:
+  zora:
+    build: .
+    container_name: zora
+    restart: unless-stopped
+    env_file: .env
+    # environment: wins over env_file. Without these, .env's DB_PATH=zora.db would put the trading database
+    # in the container layer, which is deleted on every rebuild/update (open positions and risk state included).
+    environment:
+      DB_PATH: /data/zora.db
+      BRAIN_STATE_PATH: /data/brain_state.json
+      TV_SIGNAL_PATH: /data/tv_signal.json
+      LOG_FILE: /logs/zora.log
+    volumes:
+      - zora_data:/data
+      - zora_logs:/logs
+    ports:
+      - "127.0.0.1:8787:8787"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    stop_grace_period: 30s
+volumes:
+  # Fixed names: backup.sh and docs refer to these exact volumes (Compose would otherwise prefix the project name).
+  zora_data:
+    name: zora_data
+  zora_logs:
+    name: zora_logs
